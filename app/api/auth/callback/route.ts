@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -27,23 +28,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Step 1: Exchange authorization code for short-lived Instagram token
     console.log("Exchanging code for Instagram access token...");
-    
-    const tokenResponse = await fetch(
-      `https://api.instagram.com/oauth/access_token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: appId,
-          client_secret: appSecret,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-          code: code,
-        }),
-      }
-    );
+    const tokenResponse = await fetch("https://api.instagram.com/oauth/access_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: appId,
+        client_secret: appSecret,
+        grant_type: "authorization_code",
+        redirect_uri: redirectUri,
+        code: code,
+      }),
+    });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
@@ -55,9 +51,6 @@ export async function GET(request: NextRequest) {
     const shortLivedToken = tokenData.access_token;
     const userId = tokenData.user_id;
 
-    console.log("Short-lived token obtained. User ID:", userId);
-
-    // Step 2: Exchange for long-lived token (valid for 60 days)
     console.log("Exchanging for long-lived token...");
     const longLivedResponse = await fetch(
       `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${appSecret}&access_token=${shortLivedToken}`
@@ -67,21 +60,32 @@ export async function GET(request: NextRequest) {
     if (longLivedResponse.ok) {
       const longLivedData = await longLivedResponse.json();
       finalToken = longLivedData.access_token;
-      console.log("Long-lived token obtained (valid for 60 days).");
-    } else {
-      console.warn("Could not get long-lived token, using short-lived token.");
     }
 
-    console.log("----------------------------------------");
-    console.log("SUCCESSFULLY GENERATED INSTAGRAM ACCESS TOKEN");
-    console.log("Token (Add this to USER_ACCESS_TOKEN in .env.local):");
-    console.log(finalToken);
-    console.log("Instagram User ID (Add this to IG_USER_ID in .env.local):");
-    console.log(userId);
-    console.log("----------------------------------------");
+    try {
+      const { error: dbError } = await supabaseAdmin.from("user_tokens").upsert({
+        user_id: String(userId),
+        access_token: finalToken,
+        updated_at: new Date().toISOString(),
+      });
+      if (dbError) {
+        console.error("Supabase upsert error:", dbError);
+      } else {
+        console.log("Token successfully stored in Supabase for user:", userId);
+      }
+    } catch (dbEx) {
+      console.error("Failed to save token to database:", dbEx);
+    }
 
-    // Redirect to home dashboard
-    return NextResponse.redirect(new URL("/home", baseUrl));
+    const response = NextResponse.redirect(new URL("/home", baseUrl));
+    response.cookies.set("ig_user_id", String(userId), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 60,
+    });
+
+    return response;
   } catch (error) {
     console.error("Error during Instagram token exchange callback:", error);
     return NextResponse.redirect(new URL("/home", baseUrl));

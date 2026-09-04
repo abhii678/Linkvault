@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Calendar, Bookmark, FileText, Video, File, Music, ExternalLink, Sparkles } from "lucide-react";
+import { Inbox, Calendar, Bookmark, FileText, Video, File, Music, ExternalLink, Sparkles, RefreshCw } from "lucide-react";
 import { Resource } from "@/data/types";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
@@ -15,6 +15,10 @@ export default function HomeFeed() {
   const [loading, setLoading] = useState(true);
   const [savedCount, setSavedCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+  const [authError, setAuthError] = useState<{
+    message: string;
+    reconnect: boolean;
+  } | null>(null);
 
   useEffect(() => {
     async function loadResources() {
@@ -23,9 +27,31 @@ export default function HomeFeed() {
         if (res.ok) {
           const data = await res.json();
           setResources(data);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          if (data?.error === "token_expired" || data?.reconnect) {
+            setAuthError({
+              message: data.message || "Your Instagram connection expired.",
+              reconnect: true,
+            });
+          } else if (data?.error === "not_authenticated") {
+            setAuthError({
+              message: "Please connect your Instagram account to see your DMs.",
+              reconnect: true,
+            });
+          } else {
+            setAuthError({
+              message: data?.message || "Failed to load resources.",
+              reconnect: false,
+            });
+          }
         }
       } catch (err) {
         console.error("Failed to load resources:", err);
+        setAuthError({
+          message: "Network error. Please try again.",
+          reconnect: false,
+        });
       } finally {
         setLoading(false);
       }
@@ -44,14 +70,17 @@ export default function HomeFeed() {
     return item.type.toLowerCase() === activeFilter.toLowerCase();
   });
 
-  const groupedResources = filteredResources.reduce((groups: { [key: string]: Resource[] }, resource) => {
-    const date = resource.date || "Recent";
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(resource);
-    return groups;
-  }, {});
+  const groupedResources = filteredResources.reduce(
+    (groups: { [key: string]: Resource[] }, resource) => {
+      const date = resource.date || "Recent";
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(resource);
+      return groups;
+    },
+    {}
+  );
 
   const totalCount = resources.length;
   const thisWeekCount = resources.filter(
@@ -79,7 +108,23 @@ export default function HomeFeed() {
       <TopNav />
 
       <main className="mx-auto max-w-md px-6 py-8 md:max-w-3xl relative z-10">
-        
+
+        {/* Auth Error Banner */}
+        {authError && (
+          <div className="mb-6 p-4 rounded-2xl border border-amber-200 bg-amber-50 flex flex-col gap-3">
+            <p className="text-sm text-amber-800 font-medium">{authError.message}</p>
+            {authError.reconnect && (
+              <a
+                href="/api/auth/login"
+                className="inline-flex items-center gap-2 self-start rounded-full bg-amber-200 hover:bg-amber-300 text-amber-900 px-4 py-2 text-sm font-semibold transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reconnect Instagram
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
@@ -139,19 +184,19 @@ export default function HomeFeed() {
               </div>
               <p className="text-sm font-medium text-slate-500">Syncing your vault...</p>
             </div>
-          ) : Object.keys(groupedResources).length === 0 ? (
+          ) : Object.keys(groupedResources).length === 0 && !authError ? (
             <div className="flex flex-col items-center justify-center py-24 px-6 text-center bg-white/40 rounded-3xl border border-white/60 backdrop-blur-xl shadow-xl shadow-indigo-100/20">
               <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                 <Inbox className="h-8 w-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800">It's quiet here</h3>
+              <h3 className="text-lg font-semibold text-slate-800">It is quiet here</h3>
               <p className="text-sm text-slate-500 mt-2 max-w-[250px]">
                 {resources.length === 0
                   ? "No links found in your DMs yet. They will automatically appear here."
                   : `No ${activeFilter} links found.`}
               </p>
             </div>
-          ) : (
+          ) : Object.keys(groupedResources).length === 0 && authError ? null : (
             <div className="space-y-10">
               {Object.entries(groupedResources).map(([date, items]) => (
                 <div key={date} className="space-y-4">

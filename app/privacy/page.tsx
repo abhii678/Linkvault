@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Vault, ArrowLeft, ShieldCheck } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — DM Vault",
+  title: "Privacy Policy â€” DM Vault",
   description: "How DM Vault collects, uses, and protects your data.",
 };
 
@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Privacy Policy</h1>
-              <p className="text-slate-500 mt-1">Last updated: August 23, 2026</p>
+              <p className="text-slate-500 mt-1">Last updated: August 25, 2026</p>
             </div>
           </div>
           <div className="space-y-8 text-slate-700 leading-relaxed">
