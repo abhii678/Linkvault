@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Vault, Sparkles, FolderLock, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Vault, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function LandingPage() {
   return (

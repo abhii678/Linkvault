@@ -4,12 +4,11 @@ import { supabaseAdmin } from './supabase';
 
 export async function fetchInstagramResources(igUserId?: string): Promise<Resource[]> {
   let accessToken = process.env.USER_ACCESS_TOKEN;
-  let targetUserId = igUserId || process.env.IG_USER_ID;
+  const targetUserId = igUserId || process.env.IG_USER_ID;
 
-  // Attempt to fetch user's specific long-lived token from Supabase if igUserId is provided
   if (igUserId) {
     try {
-      const { data, error } = await supabaseAdmin
+      const { data } = await supabaseAdmin
         .from('user_tokens')
         .select('access_token')
         .eq('user_id', igUserId)
@@ -18,8 +17,8 @@ export async function fetchInstagramResources(igUserId?: string): Promise<Resour
       if (data && data.access_token) {
         accessToken = data.access_token;
       }
-    } catch (e) {
-      console.warn('Could not fetch token from Supabase, falling back to env var:', e);
+    } catch {
+      console.warn('Could not fetch token from Supabase, falling back to env var');
     }
   }
 
@@ -117,8 +116,9 @@ export async function fetchInstagramResources(igUserId?: string): Promise<Resour
 
     console.log(`Successfully extracted ${resources.length} resources from live DMs.`);
     return resources;
-  } catch (error) {
-    if ((error as any)?.name === 'TokenExpiredError') {
+  } catch (error: unknown) {
+    const errObj = error as { name?: string };
+    if (errObj?.name === 'TokenExpiredError') {
       throw error;
     }
     console.error('Error fetching from Instagram Graph API:', error);

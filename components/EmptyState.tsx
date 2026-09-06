@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Vault, HelpCircle } from "lucide-react";
+import { Vault } from "lucide-react";
 
 interface EmptyStateProps {
   title: string;

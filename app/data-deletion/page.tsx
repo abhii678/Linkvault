@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Vault, ArrowLeft, Trash2, CheckCircle2 } from "lucide-react";
+import { Vault, ArrowLeft, Trash2 } from "lucide-react";
 
 export const metadata = {
   title: "Data Deletion — DM Vault",

@@ -1,5 +1,4 @@
 import { type ClassValue, clsx } from "clsx";
-import { Dilemma } from "lucide-react"; // we can just import nothing or whatever we need for tailwind merge
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -54,7 +53,7 @@ export function getDomainName(url: string): string {
   try {
     const domain = new URL(url).hostname;
     return domain.replace('www.', '');
-  } catch (e) {
+  } catch {
     return 'Link Resource';
   }
 }

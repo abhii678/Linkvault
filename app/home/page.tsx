@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Calendar, Bookmark, FileText, Video, File, Music, ExternalLink, Sparkles, RefreshCw } from "lucide-react";
+import { Inbox, Calendar, Bookmark, FileText, Video, File, Music, ExternalLink, Sparkles, RefreshCw, LucideIcon } from "lucide-react";
 import { Resource } from "@/data/types";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
@@ -87,7 +87,7 @@ export default function HomeFeed() {
     (r) => r.date === "Today" || r.date === "Yesterday"
   ).length;
 
-  const filters: { label: FilterType; icon: any }[] = [
+  const filters: { label: FilterType; icon: LucideIcon }[] = [
     { label: "All", icon: Inbox },
     { label: "Doc", icon: FileText },
     { label: "Video", icon: Video },

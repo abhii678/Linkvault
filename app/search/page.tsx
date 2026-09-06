@@ -101,7 +101,7 @@ export default function SearchResources() {
               <div className="h-16 w-16 rounded-full bg-slate-100/80 flex items-center justify-center mb-4 border border-white">
                 <SlidersHorizontal className="h-8 w-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800">No results for "{query}"</h3>
+              <h3 className="text-lg font-semibold text-slate-800">No results for &quot;{query}&quot;</h3>
               <p className="text-sm text-slate-500 mt-2 max-w-[250px]">
                 Try searching for check lists, templates, creator names, or media types.
               </p>
